@@ -79,5 +79,16 @@
   "engines": {
     "node": ">=22",
     "npm": ">=10.9.2"
+  },
+  "quartz": {
+    "name": "github-flavored-markdown",
+    "displayName": "GitHub Flavored Markdown",
+    "category": "transformer",
+    "version": "1.0.0",
+    "quartzVersion": ">=5.0.0",
+    "dependencies": [],
+    "defaultOrder": 40,
+    "defaultEnabled": true,
+    "defaultOptions": {}
   }
 }

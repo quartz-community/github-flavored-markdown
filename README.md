@@ -10,29 +10,33 @@ npx quartz plugin add github:quartz-community/github-flavored-markdown
 
 ## Usage
 
-```ts
-// quartz.config.ts
-import * as ExternalPlugin from "./.quartz/plugins"
+```yaml title="quartz.config.yaml"
+plugins:
+  - source: github:quartz-community/github-flavored-markdown
+    enabled: true
+```
 
-const config: QuartzConfig = {
-  plugins: {
-    transformers: [
-      ExternalPlugin.GitHubFlavoredMarkdown(),
-    ],
-  },
-}
+For advanced use cases, you can override in TypeScript:
+
+```ts title="quartz.ts (override)"
+import * as ExternalPlugin from "./.quartz/plugins";
+
+ExternalPlugin.GitHubFlavoredMarkdown({
+  enableSmartyPants: true,
+  linkHeadings: true,
+});
 ```
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| enableSmartyPants | `boolean` | `true` | Whether to enable SmartyPants. |
-| linkHeadings | `boolean` | `true` | Whether to link headings. |
+| Option              | Type      | Default | Description                    |
+| ------------------- | --------- | ------- | ------------------------------ |
+| `enableSmartyPants` | `boolean` | `true`  | Whether to enable SmartyPants. |
+| `linkHeadings`      | `boolean` | `true`  | Whether to link headings.      |
 
 ## Documentation
 
-See the [Quartz documentation](https://quartz.jzhao.xyz/) for more information.
+See the [Quartz documentation](https://quartz.jzhao.xyz/plugins/GitHubFlavoredMarkdown) for more information.
 
 ## License
 

@@ -88,6 +88,17 @@
     "dependencies": [],
     "defaultOrder": 40,
     "defaultEnabled": true,
-    "defaultOptions": {}
+    "defaultOptions": {
+      "enableSmartyPants": true,
+      "linkHeadings": true
+    },
+    "optionSchema": {
+      "enableSmartyPants": {
+        "type": "boolean"
+      },
+      "linkHeadings": {
+        "type": "boolean"
+      }
+    }
   }
 }

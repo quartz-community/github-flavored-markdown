@@ -1,8 +1,10 @@
+import type { QuartzTransformerPlugin } from "@quartz-community/types";
+import type { Element, Root } from "hast";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import smartypants from "remark-smartypants";
-import type { QuartzTransformerPlugin } from "@quartz-community/types";
-import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import { visit } from "unist-util-visit";
 
 export interface GfmOptions {
   enableSmartyPants: boolean;
@@ -13,6 +15,50 @@ const defaultOptions: GfmOptions = {
   enableSmartyPants: true,
   linkHeadings: true,
 };
+
+function hasCalloutClass(className: unknown): boolean {
+  if (typeof className === "string") {
+    return className.split(/\s+/).includes("callout");
+  }
+  if (Array.isArray(className)) {
+    return className.some((value) => typeof value === "string" && value === "callout");
+  }
+  return false;
+}
+
+function isCalloutBlockquote(node: Element): boolean {
+  if (node.tagName !== "blockquote") return false;
+  const props = node.properties ?? {};
+  return (
+    props["data-callout"] !== null || props.dataCallout !== null || hasCalloutClass(props.className)
+  );
+}
+
+function removeCalloutHeadingAnchors() {
+  return (tree: Root) => {
+    const calloutHeadings = new Set();
+    visit(tree, "element", (node) => {
+      if (!isCalloutBlockquote(node)) return;
+      visit(node, "element", (child) => {
+        if (/^h[1-6]$/.test(child.tagName)) {
+          calloutHeadings.add(child);
+        }
+      });
+    });
+    visit(tree, "element", (node) => {
+      if (!calloutHeadings.has(node)) return;
+      if (node.properties) {
+        delete node.properties.id;
+      }
+      if (Array.isArray(node.children)) {
+        node.children = node.children.filter((child) => {
+          if (child?.type !== "element" || child.tagName !== "a") return true;
+          return child.properties?.role !== "anchor";
+        });
+      }
+    });
+  };
+}
 
 export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts };
@@ -68,6 +114,7 @@ export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>
                 ],
               },
             },
+            () => removeCalloutHeadingAnchors(),
           ],
         ];
       } else {

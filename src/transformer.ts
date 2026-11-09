@@ -1,8 +1,12 @@
 import remarkGfm from "remark-gfm";
 import smartypants from "remark-smartypants";
 import type { QuartzTransformerPlugin } from "@quartz-community/types";
-import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import {
+  rehypeHeadingIds,
+  remarkRecordHeadingRewrites,
+  remarkRememberHeadingText,
+} from "./headingIds";
 
 export interface GfmOptions {
   enableSmartyPants: boolean;
@@ -19,12 +23,16 @@ export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>
   return {
     name: "GitHubFlavoredMarkdown",
     markdownPlugins() {
-      return opts.enableSmartyPants ? [remarkGfm, smartypants] : [remarkGfm];
+      if (!opts.enableSmartyPants) return [remarkGfm];
+      // Heading ids are made from the heading as written, so remember what SmartyPants rewrites
+      return opts.linkHeadings
+        ? [remarkGfm, remarkRememberHeadingText, smartypants, remarkRecordHeadingRewrites]
+        : [remarkGfm, smartypants];
     },
     htmlPlugins() {
       if (opts.linkHeadings) {
         return [
-          rehypeSlug,
+          rehypeHeadingIds,
           [
             rehypeAutolinkHeadings,
             {

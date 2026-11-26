@@ -95,6 +95,7 @@
     "defaultOptions": {
       "enableSmartyPants": true,
       "linkHeadings": true,
+      "replacements": {},
       "singleTilde": true
     },
     "optionSchema": {
@@ -103,6 +104,12 @@
       },
       "linkHeadings": {
         "type": "boolean"
+      },
+      "replacements": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
       },
       "singleTilde": {
         "type": "boolean"

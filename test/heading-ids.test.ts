@@ -112,4 +112,11 @@ describe("same-page anchor links", () => {
     expect(html).toContain('href="#user-defined"');
     expect(html).toContain('href="#Not%20a%20heading"');
   });
+
+  it("never point a block reference at a heading of the same name", async () => {
+    const html = await render("## Para 1\n\nsome para ^para-1\n\n[b](#^Para-1) [h](#para-1)\n");
+    expect(html).toContain('href="#^para-1"');
+    expect(html).toContain('href="#para-1"');
+    expect(html).not.toMatch(/<a href="#para-1">b</);
+  });
 });

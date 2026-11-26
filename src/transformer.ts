@@ -19,12 +19,18 @@ export interface GfmOptions {
    * GitHub nor Obsidian replaces anything.
    */
   replacements: Record<string, string>;
+  /**
+   * Strike text between single tildes (`~text~`), as GitHub does. `false` strikes only
+   * `~~text~~`, as Obsidian does, so `about ~20 W and (~€120)` stays as written.
+   */
+  singleTilde: boolean;
 }
 
 const defaultOptions: GfmOptions = {
   enableSmartyPants: true,
   linkHeadings: true,
   replacements: {},
+  singleTilde: true,
 };
 
 export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>> = (userOpts) => {
@@ -32,15 +38,16 @@ export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>
   return {
     name: "GitHubFlavoredMarkdown",
     markdownPlugins() {
+      const gfm: PluggableList[number] = [remarkGfm, { singleTilde: opts.singleTilde }];
       const rewrites: PluggableList = [];
       if (Object.keys(opts.replacements).length > 0)
         rewrites.push([remarkTextReplacements, opts.replacements]);
       if (opts.enableSmartyPants) rewrites.push(smartypants);
-      if (rewrites.length === 0) return [remarkGfm];
+      if (rewrites.length === 0) return [gfm];
       // Heading ids are made from the heading as written, so remember what the rewrites change
       return opts.linkHeadings
-        ? [remarkGfm, remarkRememberHeadingText, ...rewrites, remarkRecordHeadingRewrites]
-        : [remarkGfm, ...rewrites];
+        ? [gfm, remarkRememberHeadingText, ...rewrites, remarkRecordHeadingRewrites]
+        : [gfm, ...rewrites];
     },
     htmlPlugins() {
       if (opts.linkHeadings) {

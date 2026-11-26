@@ -21,7 +21,7 @@ async function render(md: string, options: Partial<GfmOptions> = {}): Promise<st
   return String(file);
 }
 
-const ids = (html: string) => [...html.matchAll(/<h\d id="([^"]*)"/g)].map((m) => m[1]);
+const ids = (html: string) => [...html.matchAll(/<h\d[^>]* id="([^"]*)"/g)].map((m) => m[1]);
 
 describe("heading ids", () => {
   it("are the same as rehype-slug's / GitHub's", async () => {

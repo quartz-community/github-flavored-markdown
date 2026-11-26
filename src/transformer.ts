@@ -39,7 +39,10 @@ export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>
               behavior: "append",
               properties: {
                 role: "anchor",
-                ariaHidden: true,
+                // A string: `true` renders as a bare `aria-hidden`, which isn't
+                // "true", so the icon link was exposed as a link without a name
+                // and an unknown role.
+                ariaHidden: "true",
                 tabIndex: -1,
                 "data-no-popover": true,
               },

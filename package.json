@@ -94,13 +94,17 @@
     "defaultEnabled": true,
     "defaultOptions": {
       "enableSmartyPants": true,
-      "linkHeadings": true
+      "linkHeadings": true,
+      "singleTilde": true
     },
     "optionSchema": {
       "enableSmartyPants": {
         "type": "boolean"
       },
       "linkHeadings": {
+        "type": "boolean"
+      },
+      "singleTilde": {
         "type": "boolean"
       }
     }

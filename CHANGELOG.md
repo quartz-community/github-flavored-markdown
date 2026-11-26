@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2
+
+### Patch Changes
+
+- 5a1722a: Heading anchor links render `aria-hidden="true"` instead of a bare `aria-hidden`, which assistive technology doesn't read as "true". The icon-only link was exposed as a link with no name and an unknown role (`role="anchor"`, kept as a styling hook).
+
 ## 2.1.1
 
 ### Patch Changes

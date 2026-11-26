@@ -1,6 +1,7 @@
 import remarkGfm from "remark-gfm";
 import smartypants from "remark-smartypants";
 import type { QuartzTransformerPlugin } from "@quartz-community/types";
+import type { PluggableList } from "unified";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import {
   rehypeHeadingIds,
@@ -11,11 +12,17 @@ import {
 export interface GfmOptions {
   enableSmartyPants: boolean;
   linkHeadings: boolean;
+  /**
+   * Strike text between single tildes (`~text~`), as GitHub does. `false` strikes only
+   * `~~text~~`, as Obsidian does, so `about ~20 W and (~€120)` stays as written.
+   */
+  singleTilde: boolean;
 }
 
 const defaultOptions: GfmOptions = {
   enableSmartyPants: true,
   linkHeadings: true,
+  singleTilde: true,
 };
 
 export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>> = (userOpts) => {
@@ -23,11 +30,12 @@ export const GitHubFlavoredMarkdown: QuartzTransformerPlugin<Partial<GfmOptions>
   return {
     name: "GitHubFlavoredMarkdown",
     markdownPlugins() {
-      if (!opts.enableSmartyPants) return [remarkGfm];
+      const gfm: PluggableList[number] = [remarkGfm, { singleTilde: opts.singleTilde }];
+      if (!opts.enableSmartyPants) return [gfm];
       // Heading ids are made from the heading as written, so remember what SmartyPants rewrites
       return opts.linkHeadings
-        ? [remarkGfm, remarkRememberHeadingText, smartypants, remarkRecordHeadingRewrites]
-        : [remarkGfm, smartypants];
+        ? [gfm, remarkRememberHeadingText, smartypants, remarkRecordHeadingRewrites]
+        : [gfm, smartypants];
     },
     htmlPlugins() {
       if (opts.linkHeadings) {

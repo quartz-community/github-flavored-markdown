@@ -26,10 +26,11 @@ This plugin must run before [obsidian-flavored-markdown](https://github.com/quar
 
 ## Configuration
 
-| Option              | Type      | Default | Description                                                                                                                                                                                                                                            |
-| ------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `enableSmartyPants` | `boolean` | `true`  | Typographic enhancements: curly quotes, en/em dashes, ellipses.                                                                                                                                                                                        |
-| `linkHeadings`      | `boolean` | `true`  | Gives headings their `id`s and adds an anchor link to each. `false` also turns off heading ids, so links to headings (`[[page#Heading]]`) and section embeds no longer reach them (the table of contents plugin still adds ids on pages that show it). |
+| Option              | Type      | Default | Description                                                                                                                                                                                                                                                                                          |
+| ------------------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enableSmartyPants` | `boolean` | `true`  | Typographic enhancements: curly quotes, en/em dashes, ellipses.                                                                                                                                                                                                                                      |
+| `linkHeadings`      | `boolean` | `true`  | Gives headings their `id`s and adds an anchor link to each. `false` also turns off heading ids, so links to headings (`[[page#Heading]]`) and section embeds no longer reach them (the table of contents plugin still adds ids on pages that show it).                                               |
+| `singleTilde`       | `boolean` | `true`  | Strikes text between single tildes (`~text~`), as GitHub does. `false` strikes only `~~text~~`, as Obsidian does, so a `~` meaning "about" (`~20 W and (~€120)`) stays as written. Under obsidian-flavored-markdown's default `legacy` preset, which parses as Obsidian, single tildes never strike. |
 
 ## Heading ids
 

@@ -20,6 +20,7 @@ import {
  *   `[[note#Colon unspaced]]` reaches `## Colon:unspaced`. The first such heading wins, as in
  *   Obsidian.
  * - Same-page `#anchor` links written as a heading's text are pointed at the heading's id.
+ * - A heading the rewrites changed gets Obsidian's `data-heading` as written, too.
  */
 
 /** hast property carrying a heading's SmartyPants rewrites from the Markdown to the HTML stage. */
@@ -50,7 +51,7 @@ export function remarkRememberHeadingText() {
   };
 }
 
-/** Runs after SmartyPants: records, on each heading it changed, `[rewritten, original]` pairs. */
+/** Runs after the rewrites (`replacements`, SmartyPants): records, on each heading it changed, `[rewritten, original]` pairs. */
 export function remarkRecordHeadingRewrites() {
   return (tree: MdastRoot) => {
     eachMdastHeading(tree, (heading) => {
@@ -112,6 +113,25 @@ export function headingText(el: Element, rewrites: [string, string][] = []): str
   return text;
 }
 
+/**
+ * Obsidian's `data-heading` (the heading's text, which rehype-obsidian adds when it is missing)
+ * is the heading as written, like its id and links to it: `## a -> b` gets `data-heading="a -> b"`
+ * whatever the rewrites show.
+ */
+function keepWrittenHeadingData(el: Element, rewrites: [string, string][]): void {
+  if (rewrites.length === 0 || el.properties.dataHeading !== undefined) return;
+  el.properties.dataHeading = headingText(el, rewrites).trim();
+}
+
+/** HTML stage without `linkHeadings`: only the heading's `data-heading` as written. */
+export function rehypeWrittenHeadingData() {
+  return (tree: HastRoot) => {
+    eachElement(tree, (el) => {
+      if (isHeading(el)) keepWrittenHeadingData(el, takeRewrites(el));
+    });
+  };
+}
+
 /** HTML stage: give headings their ids and alias ids, and point same-page anchors at them. */
 export function rehypeHeadingIds() {
   return (tree: HastRoot) => {
@@ -121,6 +141,7 @@ export function rehypeHeadingIds() {
     eachElement(tree, (el) => {
       if (!isHeading(el)) return;
       const rewrites = takeRewrites(el);
+      keepWrittenHeadingData(el, rewrites);
       if (el.properties.id) return;
       const text = headingText(el, rewrites);
       el.properties.id = slugger.slug(text);

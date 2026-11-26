@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { unified, type PluggableList } from "unified";
 import remarkParse from "remark-parse";
+import type { Root } from "mdast";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import { GitHubFlavoredMarkdown, type GfmOptions } from "../src";
@@ -52,10 +53,59 @@ describe("replacements", () => {
     expect(html).toContain('<a href="https://x.org/-%3E">e → f</a>');
   });
 
-  it("keep a heading's id as written", async () => {
+  it("keep a heading's id and data-heading as written", async () => {
     const html = await render("## a -> b", { replacements: arrows });
-    expect(html).toMatch(/<h2 id="a---b">a → b/);
+    expect(html).toMatch(/<h2 data-heading="a -> b" id="a---b">a → b/);
     const plain = await render("## a -> b", { replacements: arrows, enableSmartyPants: false });
-    expect(plain).toMatch(/<h2 id="a---b">a → b/);
+    expect(plain).toMatch(/<h2 data-heading="a -> b" id="a---b">a → b/);
+    const unlinked = await render("## a -> b", { replacements: arrows, linkHeadings: false });
+    expect(unlinked).toBe('<h2 data-heading="a -> b">a → b</h2>');
+    // SmartyPants' rewrites too, as Obsidian has no SmartyPants
+    expect(await render("## Range 1--2")).toMatch(/<h2 data-heading="Range 1--2" id="range-1--2">/);
+    // Untouched headings are left to rehype-obsidian
+    expect(await render("## plain", { replacements: arrows })).toMatch(/<h2 id="plain">/);
+  });
+
+  it("leave an autolink's text, its URL, as written", async () => {
+    const html = await render(
+      "https://e.com/q->r and www.e.com/s->t and <https://e.com/a=b> and a -> b",
+      { replacements: arrows },
+    );
+    expect(html).toContain('<a href="https://e.com/q-%3Er">https://e.com/q->r</a>');
+    expect(html).toContain('<a href="http://www.e.com/s-%3Et">www.e.com/s->t</a>');
+    expect(html).toContain("and a → b");
+  });
+
+  it("keep a key with an escaped character literal", async () => {
+    expect(
+      await render("a\\->b, a-\\>b, a-&gt;b, a->b, \\\\->", {
+        replacements: arrows,
+        enableSmartyPants: false,
+      }),
+    ).toBe("<p>a->b, a->b, a->b, a→b, \\→</p>");
+    // Lines after the first, in a quote, keep their offsets
+    expect(
+      await render("> x -> y\n> a\\->b c -> d", { replacements: arrows, enableSmartyPants: false }),
+    ).toBe("<blockquote>\n<p>x → y\na->b c → d</p>\n</blockquote>");
+  });
+
+  it("replace in a wikilink's alias, not an embed's", async () => {
+    // remark-obsidian's wikilink nodes, as obsidian-flavored-markdown reads them later
+    const nodes: Array<{ type: string; alias?: string; embedded?: boolean }> = [];
+    const wikilinks = () => (tree: Root) => {
+      nodes.push(
+        { type: "wikilink", alias: "x -> y" },
+        { type: "wikilink", alias: "pic -> alt", embedded: true },
+        { type: "wikilink" },
+      );
+      tree.children.push({ type: "paragraph", children: nodes as never });
+    };
+    const plugin = GitHubFlavoredMarkdown({ replacements: arrows }) as AnyPlugin;
+    const processor = unified()
+      .use(remarkParse)
+      .use(wikilinks)
+      .use(plugin.markdownPlugins() as PluggableList);
+    await processor.run(processor.parse(""));
+    expect(nodes.map((n) => n.alias)).toEqual(["x → y", "pic -> alt", undefined]);
   });
 });

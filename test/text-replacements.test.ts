@@ -44,6 +44,24 @@ describe("replacements", () => {
     );
   });
 
+  it("ignore an empty key", async () => {
+    expect(await render("a -> b", { replacements: { "": "x" }, enableSmartyPants: false })).toBe(
+      "<p>a -> b</p>",
+    );
+    expect(
+      await render("a -> b", { replacements: { "": "x", "->": "→" }, enableSmartyPants: false }),
+    ).toBe("<p>a → b</p>");
+  });
+
+  it("escape keys that are regex syntax", async () => {
+    expect(
+      await render("(c) a.b acb ...", {
+        replacements: { "(c)": "©", "a.b": "X", "...": "…" },
+        enableSmartyPants: false,
+      }),
+    ).toBe("<p>© X acb …</p>");
+  });
+
   it("leave code, inline code and URLs alone", async () => {
     const html = await render("`a -> b`\n\n```\nc -> d\n```\n\n[e -> f](https://x.org/->)", {
       replacements: arrows,
@@ -53,6 +71,19 @@ describe("replacements", () => {
     expect(html).toContain('<a href="https://x.org/-%3E">e → f</a>');
   });
 
+  it("replace in a link whose text is not just its URL", async () => {
+    expect(
+      await render("[*a -> b*](https://x.org)", { replacements: arrows, enableSmartyPants: false }),
+    ).toBe('<p><a href="https://x.org"><em>a → b</em></a></p>');
+    // Text that starts with the URL is not an autolink when more follows
+    expect(
+      await render("[https://x.org*a -> b*](https://x.org)", {
+        replacements: arrows,
+        enableSmartyPants: false,
+      }),
+    ).toBe('<p><a href="https://x.org">https://x.org<em>a → b</em></a></p>');
+  });
+
   it("keep a heading's id and data-heading as written", async () => {
     const html = await render("## a -> b", { replacements: arrows });
     expect(html).toMatch(/<h2 data-heading="a -> b" id="a---b">a → b/);
@@ -60,6 +91,13 @@ describe("replacements", () => {
     expect(plain).toMatch(/<h2 data-heading="a -> b" id="a---b">a → b/);
     const unlinked = await render("## a -> b", { replacements: arrows, linkHeadings: false });
     expect(unlinked).toBe('<h2 data-heading="a -> b">a → b</h2>');
+    expect(
+      await render("## a -> b", {
+        replacements: arrows,
+        linkHeadings: false,
+        enableSmartyPants: false,
+      }),
+    ).toBe('<h2 data-heading="a -> b">a → b</h2>');
     // SmartyPants' rewrites too, as Obsidian has no SmartyPants
     expect(await render("## Range 1--2")).toMatch(/<h2 data-heading="Range 1--2" id="range-1--2">/);
     // Untouched headings are left to rehype-obsidian
@@ -87,6 +125,20 @@ describe("replacements", () => {
     expect(
       await render("> x -> y\n> a\\->b c -> d", { replacements: arrows, enableSmartyPants: false }),
     ).toBe("<blockquote>\n<p>x → y\na->b c → d</p>\n</blockquote>");
+    // An escape of a character outside the key leaves the key's characters to be replaced
+    expect(await render("a \\* g --> h", { replacements: arrows, enableSmartyPants: false })).toBe(
+      "<p>a * g ⇒ h</p>",
+    );
+    // Named, decimal and hexadecimal character references
+    expect(
+      await render("a &equals;> b c => d", { replacements: arrows, enableSmartyPants: false }),
+    ).toBe("<p>a => b c ⇒ d</p>");
+    expect(
+      await render("a -&#62;b a -&#x3E;b c -> d", {
+        replacements: arrows,
+        enableSmartyPants: false,
+      }),
+    ).toBe("<p>a ->b a ->b c → d</p>");
   });
 
   it("replace in a wikilink's alias, not an embed's", async () => {
@@ -107,5 +159,12 @@ describe("replacements", () => {
       .use(plugin.markdownPlugins() as PluggableList);
     await processor.run(processor.parse(""));
     expect(nodes.map((n) => n.alias)).toEqual(["x → y", "pic -> alt", undefined]);
+  });
+});
+
+describe("SmartyPants", () => {
+  it("can be turned off: quotes and dashes stay as written", async () => {
+    expect(await render('"q" -- x', { enableSmartyPants: false })).toBe('<p>"q" -- x</p>');
+    expect(await render('"q" -- x')).toBe("<p>“q” — x</p>");
   });
 });

@@ -62,12 +62,28 @@ describe("heading ids", () => {
     expect(ids(html)).toContain("custom");
   });
 
+  it("get an anchor link that screen readers and popovers skip", async () => {
+    expect(await render("## h")).toBe(
+      '<h2 id="h">h<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover href="#h">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>' +
+        '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>',
+    );
+  });
+
   it("leave no helper attributes behind", async () => {
     const on = await render("## Range 1--2\n");
     const off = await render("## Range 1--2\n", { linkHeadings: false });
     expect(on).not.toContain("data-quartz");
     expect(off).not.toContain("data-quartz");
     expect(off).not.toContain("id=");
+  });
+
+  it("are left alone entirely with linkHeadings, SmartyPants and replacements off", async () => {
+    expect(await render("## Range 1--2\n", { enableSmartyPants: false, linkHeadings: false })).toBe(
+      "<h2>Range 1--2</h2>",
+    );
   });
 });
 
